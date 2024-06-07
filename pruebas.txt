@@ -1,0 +1,165 @@
+Para las pruebsas, estas se realizarán con el servidor RPC y el servidor en ejecución,
+ya que no hay que realizar ninguna acción por el usuairo en estos dos sistemas y por lo tanto no requieren ninguna prueba.
+Por lo tanto, cuando se estén ejecutando ambos servidores, las pruebas se realizarán con los clientes:
+
+1ª prueba
+    La primera prueba consistirá en realizar una ejecución normal. Un usuario se registrará, se conectará y posteriormente intentará obtener el archivo de otro usuario.
+    Para ello, se debe ejecutar lo siguiente en la shell del cliente (T1 significa la terminal 1 y T2 la terminal 2):
+
+    T1.1- REGISTER user1
+    T1.2- CONNECT user1
+
+    Ahora abriremos otra terminal con otro usuario en la que publicaremos dos archivos y que el user1 pueda obtenerlo
+
+    T2.1- REGISTER user2
+    T2.2- CONNECT user2 
+    T2.3- PUBLISH prueba.txt archivo de prueba 1
+    T2.4- PUBLISH prueba2.txt archivo de prueba 2
+
+    En el archivo prueba.txt se puede escribir algún contenido para ver como posteriormente el otro usuario tendrá en su archivo dicho contenido.
+    Ahora en la terminal del primer usuario obtendremos los usuarios conectados y el contenido publicado de user2
+
+    T1.3- LIST_USERS
+            user1 127.0.0.1 38357
+            user2 127.0.0.1 52039
+
+    T1.4- LIST_CONTENT user2
+            prueba.txt "archivo de prueba1"
+            prueba2.txt "archivo de prueba2 "
+    
+    T1.5- GET_FILE user2 prueba.txt miprueba.txt
+
+    Como podemos ver, ahora el user1 en su carpeta personal tiene el archivo miprueba.txt con el contenido de prueba.txt.
+    Ahora el user2 eliminará el archivo.
+
+    T2.5- DELETE prueba.txt
+    T2.6- LIST_CONTENT user2
+            prueba2.txt "archivo de prueba2 "
+
+    Se puede ver que ya no existe el archivo que se ha eliminado 
+    Ahora se pueden desconectar ambos usuarios
+
+    T1.6- DISCONNECT user1
+    T2.7- DISCONNECT user2
+
+    Ambos usuarios desaparecen del archivo connected_users y al hacer list_users ya no aparecen
+    Ahora realizaremos unregister de alguno de ellos para que desaparezca
+
+    T2.8- UNREGISTER user2
+
+    Se puede observar que ahora user2 no está en el fichero de users.txt y su carpeta personal se ha eliminado
+
+2ª prueba
+
+    En esta prueba se va a comprobar que el codigo trata correctamente el manejo de los errores cuando se realizan operaciones que no deberían
+    En primer lugar, vamos a intentar conectar a un usuario que no existe
+
+    T1.1- CONNECT prueba2
+        c > CONNECT FAIL, USER DOES NOT EXIST
+    
+    Como podemos ver, se ha tratado bien el error y la shel permite volver a introducir un comando
+    Ahora vamos a verificar que ocurre si hacemos UNREGISTER de un usuario que no existe
+
+    T1.2- UNREGISTER prueba2
+        c > USER DOES NOT EXIST
+    
+    Se puede observar que también se trata bien el error
+    Ahora intentaremos hacer publish de un usuario que no se ha conectado y no existe
+
+    T1.3- PUBLISH prueba.txt archivo de prueba
+        c > PUBLISH FAIL, USER DOES NOT EXIST
+    
+    También trata bien el error ya que no hay ningun usuario conectado y por lo tanto no existe usuario para hacer publish
+    Ahora comprobaremos list_user y LIST_CONTENT
+
+    T1.4- list_users
+        c > LIST_USERS FAIL, USER DOES NOT EXIST
+    T1.4- list_content prueba2
+        c > LIST_CONTENT FAIL, USER DOES NOT EXIST
+    
+    En ambas operaciones se realiza bien el tratamiento de errores, ya que no hay ningún usuario conectado y no se puede saber quien ha realizado la operación
+    Por último comprobaremos GET_FILE y DISCONNECT
+
+    T1.6- GET_FILE prueba2 prueba.txt prueba2.txt
+        c > GET FILE FAIL, FILE NOT EXIST
+    T1.7- DISCONNECT prueba2
+        c > DISCONNECT FAIL, USER DOES NOT EXIST
+    
+    Como nuestra función get_file primero comprueba el archivo, ese es el error que muestra, ya que no existe dicho archivo. Disconnect muestra que no existe el usuario.
+    Podemos ver que el manejo de errores en el caso en el que los usuarios no existen funciona correctamente
+
+3ª prueba - Usuario existe pero no está conectado
+
+    En esta prueba comprobaremos distintos tipos de errores que pueden ocurrir en el codigo cuando el usuario si existe pero no está conectado.
+    En primer lugar registraremos a un usuario
+
+    T1.1- REGISTER prueba3
+
+    Ahora registraremos a otro usuario con ese mismo nombre
+
+    T1.2- REGISTER prueba3
+        c > USERNAME IN USER
+    
+    Podemos ver que se ha tratado bien el error y en el archivo users.txt no se ha guardado otro user.
+    Ahora conectaremos al usuario
+    
+    T1.3- CONNECT prueba3
+
+    Se ha conectado correctamente, vamos a intentar conectarlo de nuevo
+
+    T1.4- CONNECT prueba3
+        c > USER ALREADY CONNECTED
+    
+    Se ha mostrado bien el mensaje y no se ha guardado en connected_users otra vez.
+    Ahora vamos a desconectar a este usuario y realizar el resto de operaciones con un usuario que si está registrado pero no conectado
+
+    T1.5- DISCONNECT prueba3
+    T1.6- DISCONNECT prueba3
+        c > DISCONNECT FAIL, USER NOT CONNECTED
+    
+    Vemos que si trata la opción cuando el usuario no está conectado. Ahora realizaremos el resto de funciones
+
+    T1.7- PUBLISH prueba.txt archivo de prueba
+        c > PUBLISH FAIL, USER DOES NOT EXIST
+    T1.8- DELETE prueba.txt
+        c > DELETE FAIL, USER DOES NOT EXIST
+    T1.9- list_users
+        c > LIST_USERS FAIL, USER DOES NOT EXIST
+    T1.10- list_content prueba2
+        c > LIST_CONTENT FAIL, USER DOES NOT EXIST
+    T1.11- GET_FILE prueba2 prueba.txt prueba2.txt
+        c > GET FILE FAIL
+    
+    Como podemos ver, el mensaje de error que se muestra es el de que el usuario no existe, en lugar de no conectado. 
+    Esto se debe a que la fomra en la que hacemos nosotros la comunicación, el servidor recibe el usuario cuando este se conecta, por ello, 
+    como estas operaciones no reciben ningun usuario, el servidor no sabe quien es el usuario que las realiza porque no sabe quien de todos los usuarios registrados es el que la está realizando, ya que no se ha conectado.
+
+4ª prueba - El resto de mensajes de error
+
+    A continuación probaremos el resto de casos de error que tienen que tratar las distintas operaciones
+    Para ello vamos a registrar a un usuario y conectarlo
+    
+    T1.1- REGISTER prueba4
+    T2.2- CONNECT prueba4
+
+    Para la operacion publish, vamos a publicar dos veces lo mismo
+
+    T1.3- PUBLISH 1.txt contenido 1
+    T1.4- PUBLISH 1.txt contenido 1
+        c > PUBLISH FAIL, CONTENT ALREADY PUBLISHED
+    
+    Como podemos ver, no permite publucar dos veces el mismo archivo.
+    Ahora si borramos un archivo que no se ha publicado.
+
+    T1.5- DELETE 2.txt
+        c > DELETE FAIL, CONTENT NOT PUBLISHED
+    
+    No elimina nada ya que ese archivo no se ha publicado.
+    Ahora intentaremos hacer un list_content de un usuario que no existe
+
+    T1.6- LIST_CONTENT usuarionoexiste
+        c > LIST_CONTENT FAIL, REMOTE USER DOES NOT EXIST
+    
+    Verifica si el usaurio remoto existe y si no es así muestra ese mensaje.
+    En el caso de get_file, mostrará el mensaje GET_FILE FAIL siempre que el resultado no sea el esperado o que el servidor devuelva un 1.
+    
