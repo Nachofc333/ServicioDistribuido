@@ -1,5 +1,8 @@
 # p_final_ssdd
 
+Este proyecto trata de diseñar un servicio distribuido de distribución de ficheros entre clientes. Todo el proyecto está dividido en dos partes. 
+Para la primera parte se utilizan sockets como método de comunicación cliente servidor. Para la segunda parte se ha implementado un servicio Web y otro rpc.
+
 Para compilar el código en C ejecutamos el siguiente comando: 
     make -f Makefile.imprimir
 
